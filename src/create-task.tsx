@@ -1,5 +1,15 @@
 import { Form, ActionPanel, Action, showToast, getPreferenceValues, Toast } from "@raycast/api";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+
+interface Project {
+  id: number;
+  name: string;
+}
+
+interface Tag {
+  id: number;
+  name: string;
+}
 
 export default function Command() {
   const preferences = getPreferenceValues<{ apiUrl: string; email: string; password: string }>();
@@ -8,6 +18,49 @@ export default function Command() {
   const [dueDate, setDueDate] = useState<Date | null>(null);
   const [status, setStatus] = useState<string>("0");
   const [note, setNote] = useState("");
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [tags, setTags] = useState<Tag[]>([]);
+  const [selectedProject, setSelectedProject] = useState<string>("");
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+
+  useEffect(() => {
+    async function loadData() {
+      try {
+        // Login to get session cookie
+        const loginRes = await fetch(`${preferences.apiUrl}/api/login`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: preferences.email, password: preferences.password }),
+        });
+        if (!loginRes.ok) {
+          throw new Error("Login failed");
+        }
+        const cookie = loginRes.headers.get("set-cookie");
+
+        // Fetch projects
+        const projectsRes = await fetch(`${preferences.apiUrl}/api/projects`, {
+          headers: cookie ? { Cookie: cookie } : undefined,
+        });
+        if (projectsRes.ok) {
+          const projectsData = await projectsRes.json();
+          setProjects(Array.isArray(projectsData) ? projectsData : projectsData.data || []);
+        }
+
+        // Fetch tags
+        const tagsRes = await fetch(`${preferences.apiUrl}/api/tags`, {
+          headers: cookie ? { Cookie: cookie } : undefined,
+        });
+        if (tagsRes.ok) {
+          const tagsData = await tagsRes.json();
+          setTags(Array.isArray(tagsData) ? tagsData : tagsData.data || []);
+        }
+      } catch (error) {
+        console.error("Failed to load projects/tags:", error);
+      }
+    }
+
+    loadData();
+  }, [preferences.apiUrl, preferences.email, preferences.password]);
 
   async function handleSubmit() {
     try {
@@ -35,6 +88,8 @@ export default function Command() {
           ...(dueDate ? { due_date: dueDate.toISOString() } : {}),
           status: parseInt(status),
           note,
+          ...(selectedProject ? { project_id: parseInt(selectedProject) } : {}),
+          ...(selectedTags.length > 0 ? { tag_ids: selectedTags.map((id) => parseInt(id)) } : {}),
         }),
       });
 
@@ -43,9 +98,11 @@ export default function Command() {
         // Reset form
         setName("");
         setPriority("medium");
-        setDueDate(null);
+        setDueDate(undefined);
         setStatus("0");
         setNote("");
+        setSelectedProject("");
+        setSelectedTags([]);
       } else {
         showToast({ title: "Failed to create task", message: response.statusText, style: Toast.Style.Failure });
       }
@@ -78,6 +135,17 @@ export default function Command() {
         <Form.Dropdown.Item value={"2"} title="Done" />
         <Form.Dropdown.Item value={"3"} title="Archived" />
         <Form.Dropdown.Item value={"4"} title="Waiting" />
+      </Form.Dropdown>
+      <Form.Dropdown id="project" title="Project" value={selectedProject} onChange={setSelectedProject}>
+        <Form.Dropdown.Item value="" title="No Project" />
+        {projects.map((project) => (
+          <Form.Dropdown.Item key={project.id} value={project.id.toString()} title={project.name} />
+        ))}
+      </Form.Dropdown>
+      <Form.Dropdown id="tags" title="Tags" value={selectedTags} onChange={setSelectedTags}>
+        {tags.map((tag) => (
+          <Form.Dropdown.Item key={tag.id} value={tag.id.toString()} title={tag.name} />
+        ))}
       </Form.Dropdown>
       <Form.TextArea id="note" title="Note" placeholder="Enter task note" value={note} onChange={setNote} />
     </Form>

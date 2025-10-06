@@ -12,6 +12,8 @@
   - Priority levels (Low, Medium, High)
   - Due date picker
   - Status selection (Not Started, In Progress, Done, Archived, Waiting)
+  - Project assignment with dropdown populated from API
+  - Tag assignment with multi-select dropdown populated from API
   - Notes/description
 - **Visual Indicators**: 
   - Empty circles for uncompleted tasks
