@@ -1,8 +1,13 @@
-import { ActionPanel, Action, Icon, List, Detail, getPreferenceValues, showToast, Toast } from "@raycast/api";
+import { ActionPanel, Action, Icon, List, Detail, getPreferenceValues, showToast, Toast, useNavigation } from "@raycast/api";
 import { useState, useEffect } from "react";
 
 interface Project {
   id: number;
+  uid: string;
+  name: string;
+}
+
+interface Tag {
   uid: string;
   name: string;
 }
@@ -16,6 +21,7 @@ interface Task {
   priority: string;
   dueDate?: string;
   project_id?: number;
+  tags?: Tag[];
 }
 
 export default function Command() {
@@ -24,7 +30,7 @@ export default function Command() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string>();
-  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [projectFilter, setProjectFilter] = useState<string>("");
   const currentFilterValue = statusFilter !== "all" ? `status-${statusFilter}` : projectFilter ? `project-${projectFilter}` : "status-all";
@@ -91,41 +97,7 @@ export default function Command() {
     load();
   }, [preferences.apiUrl, preferences.email, preferences.password]);
 
-  async function completeTask(task: Task) {
-    try {
-      // Login to get session cookie
-      const loginRes = await fetch(`${preferences.apiUrl}/api/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: preferences.email, password: preferences.password }),
-      });
-      if (!loginRes.ok) {
-        throw new Error("Login failed");
-      }
-      const cookie = loginRes.headers.get("set-cookie");
 
-      // Update task status to done
-      const response = await fetch(`${preferences.apiUrl}/api/task/${task.id}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          ...(cookie ? { Cookie: cookie } : {}),
-        },
-        body: JSON.stringify({ status: 2 }),
-      });
-
-      if (response.ok) {
-        showToast({ title: "Task completed", style: Toast.Style.Success });
-        setSelectedTask(null);
-        // Refresh tasks
-        setTasks(tasks?.map((t) => (t.id === task.id ? { ...t, status: 2 } : t)));
-      } else {
-        showToast({ title: "Failed to complete task", message: response.statusText, style: Toast.Style.Failure });
-      }
-    } catch (error) {
-      showToast({ title: "Error", message: (error as Error).message, style: Toast.Style.Failure });
-    }
-  }
 
   const getStatusText = (status: number) => {
     switch (status) {
@@ -144,21 +116,7 @@ export default function Command() {
     }
   };
 
-  if (selectedTask) {
-    const markdown = `# ${selectedTask.name}\n\n${selectedTask.note || "No notes available."}\n\n**Status:** ${getStatusText(selectedTask.status)}\n**Priority:** ${selectedTask.priority}${selectedTask.dueDate ? `\n**Due Date:** ${new Date(selectedTask.dueDate).toLocaleDateString()}` : ""}`;
 
-    return (
-      <Detail
-        markdown={markdown}
-        actions={
-          <ActionPanel>
-            <Action title="Complete Task" onAction={() => completeTask(selectedTask)} />
-            <Action.OpenInBrowser url={`${preferences.apiUrl}/task/${selectedTask.uid}`} />
-          </ActionPanel>
-        }
-      />
-    );
-  }
 
   if (error) {
     return (
@@ -223,12 +181,91 @@ export default function Command() {
             ]}
             actions={
               <ActionPanel>
-                <Action title="Show Details" onAction={() => setSelectedTask(task)} />
+                <Action.Push title="Show Details" target={<TaskDetail task={task} projects={projects} />} />
               </ActionPanel>
             }
           />
         );
       })}
     </List>
+  );
+}
+
+function TaskDetail({ task, projects }: { task: Task; projects: Project[] }) {
+  const preferences = getPreferenceValues<{ apiUrl: string; email: string; password: string }>();
+  const { pop } = useNavigation();
+
+  const getStatusText = (status: number) => {
+    switch (status) {
+      case 0:
+        return "Not Started";
+      case 1:
+        return "In Progress";
+      case 2:
+        return "Done";
+      case 3:
+        return "Archived";
+      case 4:
+        return "Waiting";
+      default:
+        return "Unknown";
+    }
+  };
+
+  async function completeTask() {
+    try {
+      // Login to get session cookie
+      const loginRes = await fetch(`${preferences.apiUrl}/api/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: preferences.email, password: preferences.password }),
+      });
+      if (!loginRes.ok) {
+        throw new Error("Login failed");
+      }
+      const cookie = loginRes.headers.get("set-cookie");
+
+      // Update task status to done
+      const response = await fetch(`${preferences.apiUrl}/api/task/${task.id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          ...(cookie ? { Cookie: cookie } : {}),
+        },
+        body: JSON.stringify({ status: 2 }),
+      });
+
+      if (response.ok) {
+        showToast({ title: "Task completed", style: Toast.Style.Success });
+        pop(); // Go back to the list
+      } else {
+        showToast({ title: "Failed to complete task", message: response.statusText, style: Toast.Style.Failure });
+      }
+    } catch (error) {
+      showToast({ title: "Error", message: (error as Error).message, style: Toast.Style.Failure });
+    }
+  }
+
+  const projectName = task.project_id ? projects.find(p => p.id === task.project_id)?.name : null;
+  const tagsText = task.tags?.map(t => t.name).join(", ") || null;
+  const markdown = `# ${task.name}
+
+**Status:** ${getStatusText(task.status)}${task.dueDate ? `  
+**Due Date:** ${new Date(task.dueDate).toLocaleDateString()}` : ""}
+
+${(projectName || tagsText) ? `${projectName ? `📁 ${projectName}` : ''}${projectName && tagsText ? ' | ' : ''}${tagsText ? `🏷️ ${tagsText}` : ''}\n\n` : ''}
+
+${task.note || "No notes available."}`;
+
+  return (
+    <Detail
+      markdown={markdown}
+      actions={
+        <ActionPanel>
+          <Action title="Complete Task" onAction={completeTask} />
+          <Action.OpenInBrowser url={`${preferences.apiUrl}/task/${task.uid}`} />
+        </ActionPanel>
+      }
+    />
   );
 }

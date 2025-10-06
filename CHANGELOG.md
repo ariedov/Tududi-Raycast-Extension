@@ -1,5 +1,15 @@
 # Tududi Changelog
 
+## [1.2.0] - 2025-10-06
+
+### Features
+- **Task Detail Layout**: Rearranged task detail view to display title first, followed by status and due date, then project and tags in a single line with emojis, and notes content last with improved spacing.
+- **Navigation Fix**: Fixed task detail navigation to use proper Raycast navigation stack, ensuring back navigation returns to the task list instead of Raycast search.
+
+### Technical Improvements
+- Refactored task detail view to use `Action.Push` and a separate `TaskDetail` component for better navigation handling.
+- Added extra spacing in task detail markdown for clearer separation between metadata and content.
+
 ## [1.1.0] - 2025-10-06
 
 ### Features
