@@ -3,11 +3,12 @@ import { useState, useEffect } from "react";
 
 interface Project {
   id: number;
+  uid: string;
   name: string;
 }
 
 interface Tag {
-  id: number;
+  uid: string;
   name: string;
 }
 
@@ -42,8 +43,16 @@ export default function Command() {
           headers: cookie ? { Cookie: cookie } : undefined,
         });
         if (projectsRes.ok) {
-          const projectsData = await projectsRes.json();
-          setProjects(Array.isArray(projectsData) ? projectsData : projectsData.data || []);
+          const projectsData = await projectsRes.json() as any;
+          let projectsArray: any[] = [];
+          if (Array.isArray(projectsData)) {
+            projectsArray = projectsData;
+          } else if (projectsData.data && Array.isArray(projectsData.data)) {
+            projectsArray = projectsData.data;
+          } else if (projectsData.projects && Array.isArray(projectsData.projects)) {
+            projectsArray = projectsData.projects;
+          }
+          setProjects(projectsArray.filter((p: any) => p && p.id != null && p.name));
         }
 
         // Fetch tags
@@ -51,8 +60,16 @@ export default function Command() {
           headers: cookie ? { Cookie: cookie } : undefined,
         });
         if (tagsRes.ok) {
-          const tagsData = await tagsRes.json();
-          setTags(Array.isArray(tagsData) ? tagsData : tagsData.data || []);
+          const tagsData = await tagsRes.json() as any;
+          let tagsArray: any[] = [];
+          if (Array.isArray(tagsData)) {
+            tagsArray = tagsData;
+          } else if (tagsData.data && Array.isArray(tagsData.data)) {
+            tagsArray = tagsData.data;
+          } else if (tagsData.tags && Array.isArray(tagsData.tags)) {
+            tagsArray = tagsData.tags;
+          }
+          setTags(tagsArray.filter((t: any) => t && t.uid != null && t.name));
         }
       } catch (error) {
         console.error("Failed to load projects/tags:", error);
@@ -75,30 +92,34 @@ export default function Command() {
       }
       const cookie = loginRes.headers.get("set-cookie");
 
-      // Create task
-      const response = await fetch(`${preferences.apiUrl}/api/task`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(cookie ? { Cookie: cookie } : {}),
-        },
-        body: JSON.stringify({
-          name,
-          priority,
-          ...(dueDate ? { due_date: dueDate.toISOString() } : {}),
-          status: parseInt(status),
-          note,
-          ...(selectedProject ? { project_id: parseInt(selectedProject) } : {}),
-          ...(selectedTags.length > 0 ? { tag_ids: selectedTags.map((id) => parseInt(id)) } : {}),
-        }),
-      });
+       // Create task
+       const selectedTagObjects = selectedTags.map(uid => tags.find(t => t.uid === uid)).filter(Boolean);
+       const body = {
+         name,
+         priority,
+         ...(dueDate ? { due_date: dueDate.toISOString() } : {}),
+         status: parseInt(status),
+         note,
+         ...(selectedProject ? { project_id: parseInt(selectedProject) } : {}),
+         ...(selectedTagObjects.length > 0 ? { tags: selectedTagObjects } : {}),
+       };
+       console.log("Create task body:", body);
+       const response = await fetch(`${preferences.apiUrl}/api/task`, {
+         method: "POST",
+         headers: {
+           "Content-Type": "application/json",
+           ...(cookie ? { Cookie: cookie } : {}),
+         },
+         body: JSON.stringify(body),
+       });
+       console.log("Create task response:", response.status, response.statusText);
 
-      if (response.ok) {
+       if (response.ok) {
         showToast({ title: "Task created successfully", style: Toast.Style.Success });
         // Reset form
         setName("");
         setPriority("medium");
-        setDueDate(undefined);
+        setDueDate(null);
         setStatus("0");
         setNote("");
         setSelectedProject("");
@@ -142,11 +163,11 @@ export default function Command() {
           <Form.Dropdown.Item key={project.id} value={project.id.toString()} title={project.name} />
         ))}
       </Form.Dropdown>
-      <Form.Dropdown id="tags" title="Tags" value={selectedTags} onChange={setSelectedTags}>
-        {tags.map((tag) => (
-          <Form.Dropdown.Item key={tag.id} value={tag.id.toString()} title={tag.name} />
-        ))}
-      </Form.Dropdown>
+       <Form.TagPicker id="tags" title="Tags" value={selectedTags} onChange={setSelectedTags}>
+         {tags.map((tag) => (
+           <Form.TagPicker.Item key={tag.uid} value={tag.uid} title={tag.name} />
+         ))}
+       </Form.TagPicker>
       <Form.TextArea id="note" title="Note" placeholder="Enter task note" value={note} onChange={setNote} />
     </Form>
   );
