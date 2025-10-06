@@ -1,6 +1,12 @@
 import { ActionPanel, Action, Icon, List, Detail, getPreferenceValues, showToast, Toast } from "@raycast/api";
 import { useState, useEffect } from "react";
 
+interface Project {
+  id: number;
+  uid: string;
+  name: string;
+}
+
 interface Task {
   id: number;
   uid: string;
@@ -9,15 +15,19 @@ interface Task {
   status: number;
   priority: string;
   dueDate?: string;
+  project_id?: number;
 }
 
 export default function Command() {
   const preferences = getPreferenceValues<{ apiUrl: string; email: string; password: string }>();
   const [tasks, setTasks] = useState<Task[]>();
+  const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string>();
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
-  const [filter, setFilter] = useState<string>("uncompleted");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [projectFilter, setProjectFilter] = useState<string>("");
+  const currentFilterValue = statusFilter !== "all" ? `status-${statusFilter}` : projectFilter ? `project-${projectFilter}` : "status-all";
 
   useEffect(() => {
     async function load() {
@@ -32,6 +42,23 @@ export default function Command() {
           throw new Error("Login failed");
         }
         const cookie = loginRes.headers.get("set-cookie");
+
+        // Fetch projects
+        const projectsRes = await fetch(`${preferences.apiUrl}/api/projects`, {
+          headers: cookie ? { Cookie: cookie } : undefined,
+        });
+        if (projectsRes.ok) {
+          const projectsData = await projectsRes.json() as any;
+          let projectsArray: any[] = [];
+          if (Array.isArray(projectsData)) {
+            projectsArray = projectsData;
+          } else if (projectsData.data && Array.isArray(projectsData.data)) {
+            projectsArray = projectsData.data;
+          } else if (projectsData.projects && Array.isArray(projectsData.projects)) {
+            projectsArray = projectsData.projects;
+          }
+          setProjects(projectsArray.filter((p: any) => p && p.id != null && p.name));
+        }
 
         // Fetch tasks
         const tasksRes = await fetch(`${preferences.apiUrl}/api/tasks?type=all&client_side_filtering=true`, {
@@ -142,40 +169,66 @@ export default function Command() {
   }
 
   const filteredTasks = tasks?.filter((task) => {
-    if (filter === "completed") return task.status === 2;
-    if (filter === "uncompleted") return task.status !== 2;
-    return true;
+    const statusMatch = statusFilter === "all" || task.status.toString() === statusFilter;
+    const projectMatch = !projectFilter || (projectFilter === "no-project" ? !task.project_id : task.project_id?.toString() === projectFilter);
+    return statusMatch && projectMatch;
   });
+
+  const handleFilterChange = (value: string) => {
+    if (value.startsWith('status-')) {
+      setStatusFilter(value.slice(7));
+      setProjectFilter("");
+    } else if (value.startsWith('project-')) {
+      setProjectFilter(value.slice(8));
+      setStatusFilter("all");
+    }
+  };
 
   return (
     <List
       isLoading={isLoading}
       searchBarAccessory={
-        <List.Dropdown tooltip="Filter Tasks" value={filter} onChange={setFilter}>
-          <List.Dropdown.Item title="Uncompleted" value="uncompleted" />
-          <List.Dropdown.Item title="Completed" value="completed" />
-          <List.Dropdown.Item title="All" value="all" />
+        <List.Dropdown tooltip="Filter Tasks" value={currentFilterValue} onChange={handleFilterChange}>
+          <List.Dropdown.Section title="Status">
+            <List.Dropdown.Item title="All" value="status-all" />
+            <List.Dropdown.Item title="Not Started" value="status-0" />
+            <List.Dropdown.Item title="In Progress" value="status-1" />
+            <List.Dropdown.Item title="Done" value="status-2" />
+            <List.Dropdown.Item title="Archived" value="status-3" />
+            <List.Dropdown.Item title="Waiting" value="status-4" />
+          </List.Dropdown.Section>
+          <List.Dropdown.Section title="Project">
+            <List.Dropdown.Item title="All Projects" value="project-" />
+            <List.Dropdown.Item title="No Project" value="project-no-project" />
+            {projects.map((project) => (
+              <List.Dropdown.Item key={`project-${project.id}`} value={`project-${project.id}`} title={project.name} />
+            ))}
+          </List.Dropdown.Section>
         </List.Dropdown>
       }
     >
-      {filteredTasks?.map((task) => (
-        <List.Item
-          key={task.id}
-          icon={task.status === 2 ? Icon.CheckCircle : Icon.Circle}
-          title={task.name}
-          subtitle={task.note}
-          accessories={[
-            { text: getStatusText(task.status) },
-            { text: task.priority },
-            ...(task.dueDate ? [{ text: new Date(task.dueDate).toLocaleDateString() }] : []),
-          ]}
-          actions={
-            <ActionPanel>
-              <Action title="Show Details" onAction={() => setSelectedTask(task)} />
-            </ActionPanel>
-          }
-        />
-      ))}
+      {filteredTasks?.map((task) => {
+        const projectName = task.project_id ? projects.find(p => p.id === task.project_id)?.name : "";
+        return (
+          <List.Item
+            key={task.id}
+            icon={task.status === 2 ? Icon.CheckCircle : Icon.Circle}
+            title={task.name}
+            subtitle={task.note}
+            accessories={[
+              { text: getStatusText(task.status) },
+              { text: task.priority },
+              ...(projectName ? [{ icon: Icon.Folder, text: projectName }] : []),
+              ...(task.dueDate ? [{ text: new Date(task.dueDate).toLocaleDateString() }] : []),
+            ]}
+            actions={
+              <ActionPanel>
+                <Action title="Show Details" onAction={() => setSelectedTask(task)} />
+              </ActionPanel>
+            }
+          />
+        );
+      })}
     </List>
   );
 }

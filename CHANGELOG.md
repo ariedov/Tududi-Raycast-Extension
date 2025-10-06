@@ -1,5 +1,16 @@
 # Tududi Changelog
 
+## [1.1.0] - 2025-10-06
+
+### Features
+- **Note Creation Updates**: Modified POST request to use `project_uid` instead of `project_id`, and tags are now sent as a list of tag names (strings)
+- **Note Details View**: Changed default action in all-notes list from copy to open details page showing note title and content
+- **Browser Integration for Notes**: Added Enter action in note details to open the note in web browser using `${baseUrl}/note/${note_uid}`
+
+### Technical Improvements
+- Updated Note interface to include `uid` field
+- Added NoteDetail component for displaying note details with markdown rendering
+
 ## [1.0.0] - 2025-10-06
 
 ### Features

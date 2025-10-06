@@ -51,7 +51,23 @@
       "description": "",
       "mode": "view"
     }
-  ],
+  ,
+    {
+      "name": "create-note",
+      "title": "Create Note",
+      "subtitle": "Creates new tududi note",
+      "description": "",
+      "mode": "view"
+    }
+      ,
+    {
+      "name": "all-notes",
+      "title": "All Notes",
+      "subtitle": "Shows all tududi notes",
+      "description": "",
+      "mode": "view"
+    }
+      ],
   "dependencies": {
     "@raycast/api": "^1.103.2",
     "@raycast/utils": "^1.17.0"
