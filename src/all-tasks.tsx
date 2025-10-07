@@ -235,15 +235,22 @@ export default function Command() {
               ...(projectName ? [{ icon: Icon.Folder, text: projectName }] : []),
               ...(task.dueDate ? [{ text: new Date(task.dueDate).toLocaleDateString() }] : []),
             ]}
-            actions={
-              <ActionPanel>
-                <Action.Push
-                  title="Show Details"
-                  target={<TaskDetail task={task} projects={projects} updateTaskStatus={updateTaskStatus} />}
-                />
-                <Action.OpenInBrowser url={`${preferences.apiUrl}/task/${task.uid}`} />
-              </ActionPanel>
-            }
+             actions={
+               <ActionPanel>
+                 <Action.Push
+                   title="Show Details"
+                   target={<TaskDetail task={task} projects={projects} updateTaskStatus={updateTaskStatus} />}
+                 />
+                 <Action.OpenInBrowser url={`${preferences.apiUrl}/task/${task.uid}`} />
+                  <ActionPanel.Submenu title="Change Status" shortcut={{ modifiers: ["shift", "cmd"], key: "s" }}>
+                   <Action title="Not Started" onAction={() => updateTaskStatus(task, 0)} />
+                   <Action title="In Progress" onAction={() => updateTaskStatus(task, 1)} />
+                   <Action title="Done" onAction={() => updateTaskStatus(task, 2)} />
+                   <Action title="Archived" onAction={() => updateTaskStatus(task, 3)} />
+                   <Action title="Waiting" onAction={() => updateTaskStatus(task, 4)} />
+                 </ActionPanel.Submenu>
+               </ActionPanel>
+             }
           />
         );
       })}
@@ -306,6 +313,13 @@ ${task.note || "No notes available."}`;
         <ActionPanel>
           <Action title={actionTitle} onAction={() => updateTaskStatus(task, newStatus).then(() => pop())} />
           <Action.OpenInBrowser url={`${preferences.apiUrl}/task/${task.uid}`} />
+           <ActionPanel.Submenu title="Change Status" shortcut={{ modifiers: ["shift", "cmd"], key: "s" }}>
+            <Action title="Not Started" onAction={() => updateTaskStatus(task, 0)} />
+            <Action title="In Progress" onAction={() => updateTaskStatus(task, 1)} />
+            <Action title="Done" onAction={() => updateTaskStatus(task, 2)} />
+            <Action title="Archived" onAction={() => updateTaskStatus(task, 3)} />
+            <Action title="Waiting" onAction={() => updateTaskStatus(task, 4)} />
+          </ActionPanel.Submenu>
         </ActionPanel>
       }
     />

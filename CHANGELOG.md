@@ -1,5 +1,15 @@
 # Tududi Changelog
 
+## [1.3.0] - 2025-10-07
+
+### Features
+- **Status Change Menu**: Added a submenu for changing task status directly from the task list and task details views, with Shift+Cmd+S shortcut for quick access.
+- **Status Options**: Submenu includes all status options (Not Started, In Progress, Done, Archived, Waiting) for comprehensive status management.
+
+### Technical Improvements
+- Refactored task status update logic to be shared between list and detail views.
+- Added keyboard shortcut support for efficient workflow.
+
 ## [1.2.0] - 2025-10-06
 
 ### Features
