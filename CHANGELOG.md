@@ -1,5 +1,19 @@
 # Tududi Changelog
 
+## [1.4.0] - 2025-10-07
+
+### Features
+- **Today Tasks View**: Added a new "Today Tasks" command that displays tasks marked for today, with the same filtering options as the all tasks view.
+- **Toggle Today Action**: Added "Mark for Today" / "Unmark from Today" actions in both task list and detail views to toggle the today flag on tasks.
+- **Task Detail Indicator**: Tasks marked for today now display "**Marked for Today**" above the description in the task detail view.
+- **API Integration**: Implemented toggle-today endpoint with PATCH method for marking/unmarking tasks for today.
+
+### Technical Improvements
+- Added `today` boolean field to Task interface.
+- Refactored toggle functionality to be shared between all tasks and today tasks views.
+- Added logging for debugging API calls.
+- Fixed HTTP method for toggle-today endpoint from POST to PATCH.
+
 ## [1.3.0] - 2025-10-07
 
 ### Features

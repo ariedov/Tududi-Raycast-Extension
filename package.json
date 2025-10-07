@@ -67,6 +67,14 @@
       "description": "",
       "mode": "view"
     }
+      ,
+    {
+      "name": "today-tasks",
+      "title": "Today Tasks",
+      "subtitle": "Tasks that are planned for today",
+      "description": "",
+      "mode": "view"
+    }
       ],
   "dependencies": {
     "@raycast/api": "^1.103.2",

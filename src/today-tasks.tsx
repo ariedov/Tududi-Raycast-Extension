@@ -79,7 +79,7 @@ export default function Command() {
         }
 
         // Fetch tasks
-        const tasksRes = await fetch(`${preferences.apiUrl}/api/tasks?type=all&client_side_filtering=true`, {
+        const tasksRes = await fetch(`${preferences.apiUrl}/api/tasks?type=today&client_side_filtering=true`, {
           headers: cookie ? { Cookie: cookie } : undefined,
         });
         if (!tasksRes.ok) {
@@ -226,7 +226,8 @@ export default function Command() {
     const projectMatch =
       !projectFilter ||
         (projectFilter === "no-project" ? !task.project_id : task.project_id?.toString() === projectFilter);
-    return statusMatch && projectMatch;
+    const todayMatch = task.today === true;
+    return statusMatch && projectMatch && todayMatch;
   });
 
   const handleFilterChange = (value: string) => {
@@ -283,7 +284,7 @@ export default function Command() {
                    target={<TaskDetail task={task} projects={projects} updateTaskStatus={updateTaskStatus} toggleToday={toggleToday} />}
                  />
                  <Action.OpenInBrowser url={`${preferences.apiUrl}/task/${task.uid}`} />
-                 <Action title={task.today ? "Unmark from Today" : "Mark for Today"} onAction={() => toggleToday(task)} />
+                  <Action title={task.today ? "Unmark from Today" : "Mark for Today"} onAction={() => toggleToday(task)} />
                   <ActionPanel.Submenu title="Change Status" shortcut={{ modifiers: ["shift", "cmd"], key: "s" }}>
                    <Action title="Not Started" onAction={() => updateTaskStatus(task, 0)} />
                    <Action title="In Progress" onAction={() => updateTaskStatus(task, 1)} />
@@ -337,7 +338,7 @@ function TaskDetail({
 
 **Status:** ${getStatusText(task.status)}${
 task.dueDate
-? `
+? `  
 **Due Date:** ${new Date(task.dueDate).toLocaleDateString()}`
 : ""
 }
@@ -357,7 +358,7 @@ ${task.today ? "**Marked for Today**\n\n" : ""}${task.note || "No notes availabl
         <ActionPanel>
           <Action title={actionTitle} onAction={() => updateTaskStatus(task, newStatus).then(() => pop())} />
           <Action.OpenInBrowser url={`${preferences.apiUrl}/task/${task.uid}`} />
-          <Action title={task.today ? "Unmark from Today" : "Mark for Today"} onAction={() => toggleToday(task)} />
+           <Action title={task.today ? "Unmark from Today" : "Mark for Today"} onAction={() => toggleToday(task)} />
            <ActionPanel.Submenu title="Change Status" shortcut={{ modifiers: ["shift", "cmd"], key: "s" }}>
             <Action title="Not Started" onAction={() => updateTaskStatus(task, 0)} />
             <Action title="In Progress" onAction={() => updateTaskStatus(task, 1)} />
