@@ -1,5 +1,10 @@
 # Tududi Changelog
 
+## [1.6.0] - 2025-10-08
+
+### Features
+- **Today Flag in Task Creation**: Added a "today" checkbox to the create task form, defaulting to checked, which is included as a boolean in the POST request body.
+
 ## [1.5.0] - 2025-10-08
 
 ### Features

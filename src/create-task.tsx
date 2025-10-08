@@ -23,6 +23,7 @@ export default function Command() {
   const [tags, setTags] = useState<Tag[]>([]);
   const [selectedProject, setSelectedProject] = useState<string>("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [today, setToday] = useState(true);
 
   useEffect(() => {
     async function loadData() {
@@ -102,6 +103,7 @@ export default function Command() {
         note,
         ...(selectedProject ? { project_id: parseInt(selectedProject) } : {}),
         ...(selectedTagObjects.length > 0 ? { tags: selectedTagObjects } : {}),
+        today,
       };
       console.log("Create task body:", body);
       const response = await fetch(`${preferences.apiUrl}/api/task`, {
@@ -124,6 +126,7 @@ export default function Command() {
         setNote("");
         setSelectedProject("");
         setSelectedTags([]);
+        setToday(true);
       } else {
         showToast({ title: "Failed to create task", message: response.statusText, style: Toast.Style.Failure });
       }
@@ -169,6 +172,7 @@ export default function Command() {
         ))}
       </Form.TagPicker>
       <Form.TextArea id="note" title="Note" placeholder="Enter task note" value={note} onChange={setNote} />
+      <Form.Checkbox id="today" label="Today" value={today} onChange={setToday} />
     </Form>
   );
 }
