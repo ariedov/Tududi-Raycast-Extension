@@ -43,7 +43,7 @@ export default function Command() {
           headers: cookie ? { Cookie: cookie } : undefined,
         });
         if (projectsRes.ok) {
-          const projectsData = await projectsRes.json() as any;
+          const projectsData = (await projectsRes.json()) as any;
           let projectsArray: any[] = [];
           if (Array.isArray(projectsData)) {
             projectsArray = projectsData;
@@ -60,7 +60,7 @@ export default function Command() {
           headers: cookie ? { Cookie: cookie } : undefined,
         });
         if (tagsRes.ok) {
-          const tagsData = await tagsRes.json() as any;
+          const tagsData = (await tagsRes.json()) as any;
           let tagsArray: any[] = [];
           if (Array.isArray(tagsData)) {
             tagsArray = tagsData;
@@ -92,29 +92,29 @@ export default function Command() {
       }
       const cookie = loginRes.headers.get("set-cookie");
 
-       // Create task
-       const selectedTagObjects = selectedTags.map(uid => tags.find(t => t.uid === uid)).filter(Boolean);
-       const body = {
-         name,
-         priority,
-         ...(dueDate ? { due_date: dueDate.toISOString() } : {}),
-         status: parseInt(status),
-         note,
-         ...(selectedProject ? { project_id: parseInt(selectedProject) } : {}),
-         ...(selectedTagObjects.length > 0 ? { tags: selectedTagObjects } : {}),
-       };
-       console.log("Create task body:", body);
-       const response = await fetch(`${preferences.apiUrl}/api/task`, {
-         method: "POST",
-         headers: {
-           "Content-Type": "application/json",
-           ...(cookie ? { Cookie: cookie } : {}),
-         },
-         body: JSON.stringify(body),
-       });
-       console.log("Create task response:", response.status, response.statusText);
+      // Create task
+      const selectedTagObjects = selectedTags.map((uid) => tags.find((t) => t.uid === uid)).filter(Boolean);
+      const body = {
+        name,
+        priority,
+        ...(dueDate ? { due_date: dueDate.toISOString() } : {}),
+        status: parseInt(status),
+        note,
+        ...(selectedProject ? { project_id: parseInt(selectedProject) } : {}),
+        ...(selectedTagObjects.length > 0 ? { tags: selectedTagObjects } : {}),
+      };
+      console.log("Create task body:", body);
+      const response = await fetch(`${preferences.apiUrl}/api/task`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(cookie ? { Cookie: cookie } : {}),
+        },
+        body: JSON.stringify(body),
+      });
+      console.log("Create task response:", response.status, response.statusText);
 
-       if (response.ok) {
+      if (response.ok) {
         showToast({ title: "Task created successfully", style: Toast.Style.Success });
         // Reset form
         setName("");
@@ -163,11 +163,11 @@ export default function Command() {
           <Form.Dropdown.Item key={project.id} value={project.id.toString()} title={project.name} />
         ))}
       </Form.Dropdown>
-       <Form.TagPicker id="tags" title="Tags" value={selectedTags} onChange={setSelectedTags}>
-         {tags.map((tag) => (
-           <Form.TagPicker.Item key={tag.uid} value={tag.uid} title={tag.name} />
-         ))}
-       </Form.TagPicker>
+      <Form.TagPicker id="tags" title="Tags" value={selectedTags} onChange={setSelectedTags}>
+        {tags.map((tag) => (
+          <Form.TagPicker.Item key={tag.uid} value={tag.uid} title={tag.name} />
+        ))}
+      </Form.TagPicker>
       <Form.TextArea id="note" title="Note" placeholder="Enter task note" value={note} onChange={setNote} />
     </Form>
   );

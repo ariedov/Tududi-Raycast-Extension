@@ -8,6 +8,7 @@ import {
   showToast,
   Toast,
   useNavigation,
+  Color,
 } from "@raycast/api";
 import { useState, useEffect } from "react";
 
@@ -28,7 +29,7 @@ interface Task {
   name: string;
   note?: string;
   status: number;
-  priority: string;
+  priority: number;
   dueDate?: string;
   project_id?: number;
   tags?: Tag[];
@@ -156,6 +157,53 @@ export default function Command() {
     }
   }
 
+  async function updateTaskPriority(task: Task, newPriority: number) {
+    try {
+      // Login to get session cookie
+      const loginRes = await fetch(`${preferences.apiUrl}/api/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: preferences.email, password: preferences.password }),
+      });
+      if (!loginRes.ok) {
+        throw new Error("Login failed");
+      }
+      const cookie = loginRes.headers.get("set-cookie");
+
+      // Prepare full task data with updated priority
+      const updatedTask = {
+        name: task.name,
+        priority: newPriority,
+        ...(task.dueDate ? { due_date: new Date(task.dueDate).toISOString() } : {}),
+        status: task.status,
+        note: task.note || "",
+        ...(task.project_id ? { project_id: task.project_id } : {}),
+        ...(task.tags ? { tags: task.tags } : {}),
+      };
+
+      // Update task
+      const response = await fetch(`${preferences.apiUrl}/api/task/${task.id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          ...(cookie ? { Cookie: cookie } : {}),
+        },
+        body: JSON.stringify(updatedTask),
+      });
+
+      if (response.ok) {
+        const priorityTexts = ["low", "medium", "high"];
+        showToast({ title: `Task priority set to ${priorityTexts[newPriority]}`, style: Toast.Style.Success });
+        // Update local state
+        setTasks((prev) => prev?.map((t) => (t.id === task.id ? { ...t, priority: newPriority } : t)));
+      } else {
+        showToast({ title: "Failed to update task", message: response.statusText, style: Toast.Style.Failure });
+      }
+    } catch (error) {
+      showToast({ title: "Error", message: (error as Error).message, style: Toast.Style.Failure });
+    }
+  }
+
   async function toggleToday(task: Task) {
     try {
       console.log(`Toggling today for task ${task.id}`);
@@ -213,6 +261,19 @@ export default function Command() {
     }
   };
 
+  const getPriorityColor = (priority: number) => {
+    switch (priority) {
+      case 2:
+        return Color.Red;
+      case 1:
+        return Color.Yellow;
+      case 0:
+        return Color.Blue;
+      default:
+        return Color.Primary;
+    }
+  };
+
   if (error) {
     return (
       <List>
@@ -225,7 +286,7 @@ export default function Command() {
     const statusMatch = statusFilter === "all" || task.status.toString() === statusFilter;
     const projectMatch =
       !projectFilter ||
-        (projectFilter === "no-project" ? !task.project_id : task.project_id?.toString() === projectFilter);
+      (projectFilter === "no-project" ? !task.project_id : task.project_id?.toString() === projectFilter);
     const todayMatch = task.today === true;
     return statusMatch && projectMatch && todayMatch;
   });
@@ -268,32 +329,50 @@ export default function Command() {
         return (
           <List.Item
             key={task.id}
-            icon={task.status === 2 ? Icon.CheckCircle : Icon.Circle}
+            icon={{
+              source: task.status === 2 ? Icon.CheckCircle : Icon.Circle,
+              tintColor: getPriorityColor(task.priority),
+            }}
             title={task.name}
             subtitle={task.note}
             accessories={[
               { text: getStatusText(task.status) },
-              { text: task.priority },
               ...(projectName ? [{ icon: Icon.Folder, text: projectName }] : []),
               ...(task.dueDate ? [{ text: new Date(task.dueDate).toLocaleDateString() }] : []),
             ]}
-             actions={
-               <ActionPanel>
-                 <Action.Push
-                   title="Show Details"
-                   target={<TaskDetail task={task} projects={projects} updateTaskStatus={updateTaskStatus} toggleToday={toggleToday} />}
-                 />
-                 <Action.OpenInBrowser url={`${preferences.apiUrl}/task/${task.uid}`} />
-                  <Action title={task.today ? "Unmark from Today" : "Mark for Today"} onAction={() => toggleToday(task)} />
-                  <ActionPanel.Submenu title="Change Status" shortcut={{ modifiers: ["shift", "cmd"], key: "s" }}>
-                   <Action title="Not Started" onAction={() => updateTaskStatus(task, 0)} />
-                   <Action title="In Progress" onAction={() => updateTaskStatus(task, 1)} />
-                   <Action title="Done" onAction={() => updateTaskStatus(task, 2)} />
-                   <Action title="Archived" onAction={() => updateTaskStatus(task, 3)} />
-                   <Action title="Waiting" onAction={() => updateTaskStatus(task, 4)} />
-                 </ActionPanel.Submenu>
-               </ActionPanel>
-             }
+            actions={
+              <ActionPanel>
+                <Action.Push
+                  title="Show Details"
+                  target={
+                    <TaskDetail
+                      task={task}
+                      projects={projects}
+                      updateTaskStatus={updateTaskStatus}
+                      updateTaskPriority={updateTaskPriority}
+                      toggleToday={toggleToday}
+                    />
+                  }
+                />
+                <Action.OpenInBrowser url={`${preferences.apiUrl}/task/${task.uid}`} />
+                <Action
+                  title={task.today ? "Unmark from Today" : "Mark for Today"}
+                  onAction={() => toggleToday(task)}
+                />
+                <ActionPanel.Submenu title="Change Status" shortcut={{ modifiers: ["shift", "cmd"], key: "s" }}>
+                  <Action title="Not Started" onAction={() => updateTaskStatus(task, 0)} />
+                  <Action title="In Progress" onAction={() => updateTaskStatus(task, 1)} />
+                  <Action title="Done" onAction={() => updateTaskStatus(task, 2)} />
+                  <Action title="Archived" onAction={() => updateTaskStatus(task, 3)} />
+                  <Action title="Waiting" onAction={() => updateTaskStatus(task, 4)} />
+                </ActionPanel.Submenu>
+                <ActionPanel.Submenu title="Change Priority">
+                  <Action title="Low" onAction={() => updateTaskPriority(task, 0)} />
+                  <Action title="Medium" onAction={() => updateTaskPriority(task, 1)} />
+                  <Action title="High" onAction={() => updateTaskPriority(task, 2)} />
+                </ActionPanel.Submenu>
+              </ActionPanel>
+            }
           />
         );
       })}
@@ -305,13 +384,15 @@ function TaskDetail({
   task,
   projects,
   updateTaskStatus,
+  updateTaskPriority,
   toggleToday,
 }: {
-    task: Task;
-    projects: Project[];
-    updateTaskStatus: (task: Task, newStatus: number) => Promise<void>;
-    toggleToday: (task: Task) => Promise<void>;
-  }) {
+  task: Task;
+  projects: Project[];
+  updateTaskStatus: (task: Task, newStatus: number) => Promise<void>;
+  updateTaskPriority: (task: Task, newPriority: number) => Promise<void>;
+  toggleToday: (task: Task) => Promise<void>;
+}) {
   const preferences = getPreferenceValues<{ apiUrl: string; email: string; password: string }>();
   const { pop } = useNavigation();
 
@@ -337,11 +418,11 @@ function TaskDetail({
   const markdown = `# ${task.name}
 
 **Status:** ${getStatusText(task.status)}${
-task.dueDate
-? `  
+    task.dueDate
+      ? `  
 **Due Date:** ${new Date(task.dueDate).toLocaleDateString()}`
-: ""
-}
+      : ""
+  }
 
 ${projectName || tagsText ? `${projectName ? `📁 ${projectName}` : ""}${projectName && tagsText ? " | " : ""}${tagsText ? `🏷️ ${tagsText}` : ""}\n\n` : ""}
 
@@ -358,13 +439,18 @@ ${task.today ? "**Marked for Today**\n\n" : ""}${task.note || "No notes availabl
         <ActionPanel>
           <Action title={actionTitle} onAction={() => updateTaskStatus(task, newStatus).then(() => pop())} />
           <Action.OpenInBrowser url={`${preferences.apiUrl}/task/${task.uid}`} />
-           <Action title={task.today ? "Unmark from Today" : "Mark for Today"} onAction={() => toggleToday(task)} />
-           <ActionPanel.Submenu title="Change Status" shortcut={{ modifiers: ["shift", "cmd"], key: "s" }}>
+          <Action title={task.today ? "Unmark from Today" : "Mark for Today"} onAction={() => toggleToday(task)} />
+          <ActionPanel.Submenu title="Change Status" shortcut={{ modifiers: ["shift", "cmd"], key: "s" }}>
             <Action title="Not Started" onAction={() => updateTaskStatus(task, 0)} />
             <Action title="In Progress" onAction={() => updateTaskStatus(task, 1)} />
             <Action title="Done" onAction={() => updateTaskStatus(task, 2)} />
             <Action title="Archived" onAction={() => updateTaskStatus(task, 3)} />
             <Action title="Waiting" onAction={() => updateTaskStatus(task, 4)} />
+          </ActionPanel.Submenu>
+          <ActionPanel.Submenu title="Change Priority">
+            <Action title="Low" onAction={() => updateTaskPriority(task, 0)} />
+            <Action title="Medium" onAction={() => updateTaskPriority(task, 1)} />
+            <Action title="High" onAction={() => updateTaskPriority(task, 2)} />
           </ActionPanel.Submenu>
         </ActionPanel>
       }

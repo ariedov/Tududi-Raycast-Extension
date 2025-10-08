@@ -1,4 +1,4 @@
- import { ActionPanel, Action, Icon, List, Detail, getPreferenceValues } from "@raycast/api";
+import { ActionPanel, Action, Icon, List, Detail, getPreferenceValues } from "@raycast/api";
 import { useState, useEffect } from "react";
 
 interface Project {
@@ -46,7 +46,7 @@ export default function Command() {
           headers: cookie ? { Cookie: cookie } : undefined,
         });
         if (projectsRes.ok) {
-          const projectsData = await projectsRes.json() as any;
+          const projectsData = (await projectsRes.json()) as any;
           let projectsArray: any[] = [];
           if (Array.isArray(projectsData)) {
             projectsArray = projectsData;
@@ -63,7 +63,7 @@ export default function Command() {
           headers: cookie ? { Cookie: cookie } : undefined,
         });
         if (notesRes.ok) {
-          const notesData = await notesRes.json() as any;
+          const notesData = (await notesRes.json()) as any;
           let notesArray: any[] = [];
           if (Array.isArray(notesData)) {
             notesArray = notesData;
@@ -101,8 +101,8 @@ export default function Command() {
       }
     >
       {filteredNotes.map((note) => {
-        const projectName = note.project_id ? projects.find(p => p.id === note.project_id)?.name : "No Project";
-        const tagsText = note.tags?.map(t => t.name).join(", ") || "";
+        const projectName = note.project_id ? projects.find((p) => p.id === note.project_id)?.name : "No Project";
+        const tagsText = note.tags?.map((t) => t.name).join(", ") || "";
         return (
           <List.Item
             key={note.id}

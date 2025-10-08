@@ -1,5 +1,16 @@
 # Tududi Changelog
 
+## [1.5.0] - 2025-10-08
+
+### Features
+- **Priority Color Coding**: Task icons are now tinted based on priority levels (red for high, yellow for medium, blue for low) for quick visual identification.
+- **Change Priority Submenu**: Added "Change Priority" submenu in both task list and detail views, allowing users to update task priorities directly with Low, Medium, and High options.
+
+### Technical Improvements
+- Added `updateTaskPriority` function for handling priority updates via PATCH requests.
+- Updated task icon rendering to use `tintColor` for priority-based coloring.
+- Ensured all priority levels have distinct visual indicators.
+
 ## [1.4.0] - 2025-10-07
 
 ### Features
