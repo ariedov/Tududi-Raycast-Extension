@@ -46,16 +46,8 @@ export default function Command() {
           headers: cookie ? { Cookie: cookie } : undefined,
         });
         if (projectsRes.ok) {
-          const projectsData = (await projectsRes.json()) as any;
-          let projectsArray: any[] = [];
-          if (Array.isArray(projectsData)) {
-            projectsArray = projectsData;
-          } else if (projectsData.data && Array.isArray(projectsData.data)) {
-            projectsArray = projectsData.data;
-          } else if (projectsData.projects && Array.isArray(projectsData.projects)) {
-            projectsArray = projectsData.projects;
-          }
-          setProjects(projectsArray.filter((p: any) => p && p.id != null && p.name));
+          const projectsData = (await projectsRes.json()) as { projects: Project[] };
+          setProjects(projectsData.projects.filter((p: Project) => p && p.id != null && p.name));
         }
 
         // Fetch notes
@@ -63,16 +55,8 @@ export default function Command() {
           headers: cookie ? { Cookie: cookie } : undefined,
         });
         if (notesRes.ok) {
-          const notesData = (await notesRes.json()) as any;
-          let notesArray: any[] = [];
-          if (Array.isArray(notesData)) {
-            notesArray = notesData;
-          } else if (notesData.data && Array.isArray(notesData.data)) {
-            notesArray = notesData.data;
-          } else if (notesData.notes && Array.isArray(notesData.notes)) {
-            notesArray = notesData.notes;
-          }
-          setNotes(notesArray.filter((n: any) => n && n.id != null && n.uid && n.title));
+          const notesData = (await notesRes.json()) as Note[];
+          setNotes(notesData.filter((n: Note) => n && n.id != null && n.uid && n.title));
         }
       } catch (error) {
         console.error("Failed to load notes/projects:", error);

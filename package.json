@@ -41,41 +41,38 @@
       "name": "all-tasks",
       "title": "All Tasks",
       "subtitle": "View all tududi tasks",
-      "description": "",
+      "description": "Browse all Tududi tasks directly from Raycast",
       "mode": "view"
     },
     {
       "name": "create-task",
       "title": "Create Task",
       "subtitle": "Create Tududi Task",
-      "description": "",
+      "description": "Quickly add a Tududi task with rich options",
       "mode": "view"
-    }
-  ,
+    },
     {
       "name": "create-note",
       "title": "Create Note",
       "subtitle": "Creates new tududi note",
-      "description": "",
+      "description": "Compose detailed Tududi notes without leaving Raycast",
       "mode": "view"
-    }
-      ,
+    },
     {
       "name": "all-notes",
       "title": "All Notes",
       "subtitle": "Shows all tududi notes",
-      "description": "",
+      "description": "Review every Tududi note alongside tags and projects",
       "mode": "view"
-    }
-      ,
+    },
     {
       "name": "today-tasks",
       "title": "Today Tasks",
       "subtitle": "Tasks that are planned for today",
-      "description": "",
+      "description": "Focus on Tududi tasks scheduled for completion today",
       "mode": "view"
     }
-      ],
+  ],
   "dependencies": {
     "@raycast/api": "^1.103.2",
     "@raycast/utils": "^1.17.0"

@@ -44,16 +44,8 @@ export default function Command() {
           headers: cookie ? { Cookie: cookie } : undefined,
         });
         if (projectsRes.ok) {
-          const projectsData = (await projectsRes.json()) as any;
-          let projectsArray: any[] = [];
-          if (Array.isArray(projectsData)) {
-            projectsArray = projectsData;
-          } else if (projectsData.data && Array.isArray(projectsData.data)) {
-            projectsArray = projectsData.data;
-          } else if (projectsData.projects && Array.isArray(projectsData.projects)) {
-            projectsArray = projectsData.projects;
-          }
-          setProjects(projectsArray.filter((p: any) => p && p.id != null && p.name));
+          const projectsData = (await projectsRes.json()) as { projects: Project[] };
+          setProjects(projectsData.projects.filter((p: Project) => p && p.id != null && p.name));
         }
 
         // Fetch tags
@@ -61,16 +53,8 @@ export default function Command() {
           headers: cookie ? { Cookie: cookie } : undefined,
         });
         if (tagsRes.ok) {
-          const tagsData = (await tagsRes.json()) as any;
-          let tagsArray: any[] = [];
-          if (Array.isArray(tagsData)) {
-            tagsArray = tagsData;
-          } else if (tagsData.data && Array.isArray(tagsData.data)) {
-            tagsArray = tagsData.data;
-          } else if (tagsData.tags && Array.isArray(tagsData.tags)) {
-            tagsArray = tagsData.tags;
-          }
-          setTags(tagsArray.filter((t: any) => t && t.uid != null && t.name));
+          const tagsData = (await tagsRes.json()) as Tag[];
+          setTags(tagsData.filter((t: Tag) => t && t.uid != null && t.name));
         }
       } catch (error) {
         console.error("Failed to load projects/tags:", error);
