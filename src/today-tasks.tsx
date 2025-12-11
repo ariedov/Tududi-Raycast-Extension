@@ -97,7 +97,7 @@ export default function Command() {
       };
 
       // Update task
-      const response = await fetch(`${preferences.apiUrl}/api/task/${task.id}`, {
+      const response = await fetch(`${preferences.apiUrl}/api/task/${task.uid}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -115,6 +115,7 @@ export default function Command() {
         showToast({ title: "Failed to update task", message: response.statusText, style: Toast.Style.Failure });
       }
     } catch (error) {
+      console.log(error);
       showToast({ title: "Error", message: (error as Error).message, style: Toast.Style.Failure });
     }
   }
@@ -151,6 +152,7 @@ export default function Command() {
         showToast({ title: "Failed to update task", message: response.statusText, style: Toast.Style.Failure });
       }
     } catch (error) {
+      console.log(error);
       showToast({ title: "Error", message: (error as Error).message, style: Toast.Style.Failure });
     }
   }
@@ -159,7 +161,7 @@ export default function Command() {
     try {
       console.log(`Toggling today for task ${task.id}`);
       // Toggle today
-      const toggleUrl = `${preferences.apiUrl}/api/task/${task.id}/toggle-today`;
+      const toggleUrl = `${preferences.apiUrl}/api/task/${task.uid}/toggle-today`;
       console.log(`Calling ${toggleUrl}`);
       const response = await fetch(toggleUrl, {
         method: "PATCH",

@@ -105,7 +105,7 @@ export default function Command() {
       };
 
       // Update task
-      const response = await fetch(`${preferences.apiUrl}/api/task/${task.id}`, {
+      const response = await fetch(`${preferences.apiUrl}/api/task/${task.uid}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -141,7 +141,7 @@ export default function Command() {
       };
 
       // Update task
-      const response = await fetch(`${preferences.apiUrl}/api/task/${task.id}`, {
+      const response = await fetch(`${preferences.apiUrl}/api/task/${task.uid}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -165,9 +165,9 @@ export default function Command() {
 
   async function toggleToday(task: Task) {
     try {
-      console.log(`Toggling today for task ${task.id}`);
+      console.log(`Toggling today for task ${task.uid}`);
       // Toggle today
-      const toggleUrl = `${preferences.apiUrl}/api/task/${task.id}/toggle-today`;
+      const toggleUrl = `${preferences.apiUrl}/api/task/${task.uid}/toggle-today`;
       console.log(`Calling ${toggleUrl}`);
       const response = await fetch(toggleUrl, {
         method: "PATCH",
