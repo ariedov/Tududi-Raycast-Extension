@@ -14,16 +14,12 @@ interface Tag {
 
 export default function Command() {
   const preferences = getPreferenceValues<{ apiUrl: string; token: string }>();
-  const [name, setName] = useState("");
-  const [priority, setPriority] = useState("medium");
-  const [dueDate, setDueDate] = useState<Date | null>(null);
-  const [status, setStatus] = useState<string>("0");
-  const [note, setNote] = useState("");
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
   const [projects, setProjects] = useState<Project[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
   const [selectedProject, setSelectedProject] = useState<string>("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const [today, setToday] = useState(true);
 
   useEffect(() => {
     async function loadData() {
@@ -55,20 +51,19 @@ export default function Command() {
 
   async function handleSubmit() {
     try {
-      // Create task
+      // Create note
       const selectedTagObjects = selectedTags.map((uid) => tags.find((t) => t.uid === uid)).filter(Boolean);
+      const selectedProjectObj = projects.find((p) => p.id.toString() === selectedProject);
       const body = {
-        name,
-        priority,
-        ...(dueDate ? { due_date: dueDate.toISOString() } : {}),
-        status: parseInt(status),
-        note,
-        ...(selectedProject ? { project_id: parseInt(selectedProject) } : {}),
-        ...(selectedTagObjects.length > 0 ? { tags: selectedTagObjects } : {}),
-        today,
+        title,
+        content,
+        ...(selectedProjectObj ? { project_uid: selectedProjectObj.uid } : {}),
+        ...(selectedTagObjects.length > 0
+          ? { tags: selectedTagObjects.filter((t) => t !== undefined).map((t) => t.name) }
+          : {}),
       };
-      console.log("Create task body:", body);
-      const response = await fetch(`${preferences.apiUrl}/api/task`, {
+      console.log("Create note body:", body);
+      const response = await fetch(`${preferences.apiUrl}/api/note`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -76,21 +71,17 @@ export default function Command() {
         },
         body: JSON.stringify(body),
       });
-      console.log("Create task response:", response.status, response.statusText);
+      console.log("Create note response:", response.status, response.statusText);
 
       if (response.ok) {
-        showToast({ title: "Task created successfully", style: Toast.Style.Success });
+        showToast({ title: "Note created successfully", style: Toast.Style.Success });
         // Reset form
-        setName("");
-        setPriority("medium");
-        setDueDate(null);
-        setStatus("0");
-        setNote("");
+        setTitle("");
+        setContent("");
         setSelectedProject("");
         setSelectedTags([]);
-        setToday(true);
       } else {
-        showToast({ title: "Failed to create task", message: response.statusText, style: Toast.Style.Failure });
+        showToast({ title: "Failed to create note", message: response.statusText, style: Toast.Style.Failure });
       }
     } catch (error) {
       showToast({ title: "Error", message: (error as Error).message, style: Toast.Style.Failure });
@@ -105,23 +96,15 @@ export default function Command() {
         </ActionPanel>
       }
     >
-      <Form.Description text="Create a new Tududi task." />
-      <Form.TextField id="name" title="Name" placeholder="Enter task name" value={name} onChange={setName} />
-
-      <Form.Dropdown id="priority" title="Priority" value={priority} onChange={setPriority}>
-        <Form.Dropdown.Item value="low" title="Low" />
-        <Form.Dropdown.Item value="medium" title="Medium" />
-        <Form.Dropdown.Item value="high" title="High" />
-      </Form.Dropdown>
-
-      <Form.DatePicker id="dueDate" title="Due Date" value={dueDate} onChange={(date) => setDueDate(date || null)} />
-      <Form.Dropdown id="status" title="Status" value={status} onChange={setStatus}>
-        <Form.Dropdown.Item value={"0"} title="Not Started" />
-        <Form.Dropdown.Item value={"1"} title="In Progress" />
-        <Form.Dropdown.Item value={"2"} title="Done" />
-        <Form.Dropdown.Item value={"3"} title="Archived" />
-        <Form.Dropdown.Item value={"4"} title="Waiting" />
-      </Form.Dropdown>
+      <Form.Description text="Create a new Tududi note." />
+      <Form.TextField id="title" title="Title" placeholder="Enter note title" value={title} onChange={setTitle} />
+      <Form.TextArea
+        id="content"
+        title="Content"
+        placeholder="Enter note content"
+        value={content}
+        onChange={setContent}
+      />
       <Form.Dropdown id="project" title="Project" value={selectedProject} onChange={setSelectedProject}>
         <Form.Dropdown.Item value="" title="No Project" />
         {projects.map((project) => (
@@ -133,8 +116,6 @@ export default function Command() {
           <Form.TagPicker.Item key={tag.uid} value={tag.uid} title={tag.name} />
         ))}
       </Form.TagPicker>
-      <Form.TextArea id="note" title="Note" placeholder="Enter task note" value={note} onChange={setNote} />
-      <Form.Checkbox id="today" label="Today" value={today} onChange={setToday} />
     </Form>
   );
 }

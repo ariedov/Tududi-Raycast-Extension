@@ -61,23 +61,15 @@ export default function Command() {
         }
 
         // Fetch tasks
-        const tasksRes = await fetch(`${preferences.apiUrl}/api/tasks?type=all&client_side_filtering=true`, {
+        const tasksRes = await fetch(`${preferences.apiUrl}/api/tasks?type=today&client_side_filtering=true`, {
           headers: { Authorization: `Bearer ${preferences.token}` },
         });
         if (!tasksRes.ok) {
           throw new Error("Failed to fetch tasks");
         }
-        const tasksData = (await tasksRes.json()) as { data?: Task[]; tasks?: Task[] } | Task[];
-        let tasksArray: Task[] | undefined;
-        if (Array.isArray(tasksData)) {
-          tasksArray = tasksData;
-        } else if (tasksData.data && Array.isArray(tasksData.data)) {
-          tasksArray = tasksData.data;
-        } else if (tasksData.tasks && Array.isArray(tasksData.tasks)) {
-          tasksArray = tasksData.tasks;
-        }
-        if (tasksArray) {
-          setTasks(tasksArray);
+        const tasksData = (await tasksRes.json()) as { tasks?: Task[] };
+        if (tasksData.tasks && Array.isArray(tasksData.tasks)) {
+          setTasks(tasksData.tasks);
         } else {
           throw new Error("Invalid tasks response");
         }
@@ -235,7 +227,8 @@ export default function Command() {
     const projectMatch =
       !projectFilter ||
       (projectFilter === "no-project" ? !task.project_id : task.project_id?.toString() === projectFilter);
-    return statusMatch && projectMatch;
+    const todayMatch = task.today === true;
+    return statusMatch && projectMatch && todayMatch;
   });
 
   const handleFilterChange = (value: string) => {
@@ -366,7 +359,7 @@ function TaskDetail({
 
 **Status:** ${getStatusText(task.status)}${
     task.dueDate
-      ? `
+      ? `  
 **Due Date:** ${new Date(task.dueDate).toLocaleDateString()}`
       : ""
   }
