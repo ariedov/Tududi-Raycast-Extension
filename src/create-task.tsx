@@ -32,7 +32,7 @@ export default function Command() {
         const projectsRes = await fetch(`${preferences.apiUrl}/api/projects`, {
           headers: { Authorization: `Bearer ${preferences.token}` },
         });
-        console.log(projectsRes);
+
         if (projectsRes.ok) {
           const projectsData = (await projectsRes.json()) as { projects: Project[] };
           setProjects(projectsData.projects.filter((p: Project) => p && p.id != null && p.name));
@@ -68,7 +68,6 @@ export default function Command() {
         ...(selectedTagObjects.length > 0 ? { tags: selectedTagObjects } : {}),
         today,
       };
-      console.log("Create task body:", body);
       const response = await fetch(`${preferences.apiUrl}/api/task`, {
         method: "POST",
         headers: {
@@ -77,7 +76,6 @@ export default function Command() {
         },
         body: JSON.stringify(body),
       });
-      console.log("Create task response:", response.status, response.statusText);
 
       if (response.ok) {
         showToast({ title: "Task created successfully", style: Toast.Style.Success });

@@ -115,7 +115,6 @@ export default function Command() {
         showToast({ title: "Failed to update task", message: response.statusText, style: Toast.Style.Failure });
       }
     } catch (error) {
-      console.log(error);
       showToast({ title: "Error", message: (error as Error).message, style: Toast.Style.Failure });
     }
   }
@@ -152,17 +151,14 @@ export default function Command() {
         showToast({ title: "Failed to update task", message: response.statusText, style: Toast.Style.Failure });
       }
     } catch (error) {
-      console.log(error);
       showToast({ title: "Error", message: (error as Error).message, style: Toast.Style.Failure });
     }
   }
 
   async function toggleToday(task: Task) {
     try {
-      console.log(`Toggling today for task ${task.id}`);
       // Toggle today
       const toggleUrl = `${preferences.apiUrl}/api/task/${task.uid}/toggle-today`;
-      console.log(`Calling ${toggleUrl}`);
       const response = await fetch(toggleUrl, {
         method: "PATCH",
         headers: {
@@ -170,7 +166,6 @@ export default function Command() {
           Authorization: `Bearer ${preferences.token}`,
         },
       });
-      console.log(`Response status: ${response.status}, ok: ${response.ok}, statusText: ${response.statusText}`);
 
       if (response.ok) {
         const newToday = !task.today;
@@ -181,7 +176,6 @@ export default function Command() {
         showToast({ title: "Failed to toggle today", message: response.statusText, style: Toast.Style.Failure });
       }
     } catch (error) {
-      console.error("Error toggling today:", error);
       showToast({ title: "Error", message: (error as Error).message, style: Toast.Style.Failure });
     }
   }
